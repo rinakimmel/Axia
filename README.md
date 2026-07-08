@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Axia — Financial Resilience Prediction & Market Sentiment AI
 
 Axia predicts a company's financial resilience from its financial ratios
@@ -89,3 +90,7 @@ streamlit run app.py
 
 [![Tamar Waiss LinkedIn](https://img.shields.io/badge/Tamar_Waiss-Profile-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tamar-waiss)
 [![Rina Kimmel LinkedIn](https://img.shields.io/badge/Rina_Kimmel-Profile-blue?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/rina-kimmel-7963ba413)
+=======
+# Axia
+AI-powered financial resilience prediction &amp; market sentiment analysis. Calibrated XGBoost credit-style ratings (A+ to D) combined with recency-weighted NLP sentiment from live financial news.
+>>>>>>> d740329d773e9772d8abe28952153eb9cc33fbfe

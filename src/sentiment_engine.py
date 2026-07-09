@@ -67,12 +67,9 @@ LEXICON_NEGATIVE = {
     "underperformed", "pressure", "struggling", "struggles",
 }
 
-# Blend weights: the trained model still leads; the lexicon corrects
-# out-of-domain misses. Applied only when the lexicon actually matched.
 MODEL_WEIGHT   = 0.55
 LEXICON_WEIGHT = 0.45
 
-# |combined polarity| above this flips the label away from neutral.
 LABEL_THRESHOLD = 0.20
 
 
@@ -86,9 +83,6 @@ class SentimentEngine:
         self.model: LogisticRegression | None   = None
         self.vectorizer: TfidfVectorizer | None = None
 
-    # ------------------------------------------------------------------
-    # Training
-    # ------------------------------------------------------------------
 
     def train_and_save_model(self) -> bool:
         print("\n[SentimentEngine] Starting NLP training pipeline...")
@@ -138,10 +132,6 @@ class SentimentEngine:
         print("[SentimentEngine] Model and vectorizer saved.")
         return True
 
-    # ------------------------------------------------------------------
-    # Loading
-    # ------------------------------------------------------------------
-
     def load_model(self) -> bool:
         if os.path.exists(self.model_path) and os.path.exists(self.vectorizer_path):
             with open(self.model_path, "rb") as f:
@@ -153,9 +143,6 @@ class SentimentEngine:
         print("[SentimentEngine] No saved model found - training now...")
         return self.train_and_save_model()
 
-    # ------------------------------------------------------------------
-    # Inference
-    # ------------------------------------------------------------------
 
     @staticmethod
     def _lexicon_polarity(text: str) -> tuple[float, int]:
@@ -224,9 +211,6 @@ class SentimentEngine:
         """Analyzes a list of texts; results in input order."""
         return [self.analyze_sentiment(t) for t in texts]
 
-    # ------------------------------------------------------------------
-    # Aggregate scoring
-    # ------------------------------------------------------------------
 
     @staticmethod
     def aggregate_score(results: list[dict],
@@ -282,9 +266,6 @@ class SentimentEngine:
         }
 
 
-# ----------------------------------------------------------------------
-# Quick self-test
-# ----------------------------------------------------------------------
 
 if __name__ == "__main__":
     engine = SentimentEngine()

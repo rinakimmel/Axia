@@ -51,27 +51,18 @@ from src.config import (
 class BankruptcyEngine:
 
     def __init__(self, data_path: str = None, model_dir: str = "models"):
-        self.data_path    = data_path or os.path.join("data", "bankruptcy_data.csv")
-        self.model_dir    = model_dir
-        self.model_path   = os.path.join(model_dir, "bankruptcy_model.pkl")
+        self.data_path = data_path or os.path.join("data", "bankruptcy_data.csv")
+        self.model_dir = model_dir
+        self.model_path = os.path.join(model_dir, "bankruptcy_model.pkl")
         self.metrics_path = os.path.join(model_dir, "model_metrics.json")
 
-        self.model:     CalibratedClassifierCV | None = None
-        self.explainer: shap.TreeExplainer | None = None   # cached, built once
+        self.model: CalibratedClassifierCV | None = None
+        self.explainer: shap.TreeExplainer | None = None
         self.threshold: float = DEFAULT_RISK_THRESHOLD
-        self.metrics:   dict = {}
+        self.metrics: dict = {}
         self.feature_names: list[str] = ALL_FEATURES
 
-    # ------------------------------------------------------------------
-    # Training
-    # ------------------------------------------------------------------
-
     def train_and_save_model(self) -> bool:
-        """
-        Full training pipeline:
-          load -> map columns -> stratified split -> fit calibrated XGBoost
-          -> tune decision threshold -> evaluate honestly -> persist.
-        """
         print("\n[BankruptcyEngine] Starting training pipeline...")
 
         if not os.path.exists(self.data_path):
@@ -84,12 +75,10 @@ class BankruptcyEngine:
         X = df[ALL_FEATURES]
         y = df["bankruptcy_flag"]
 
-        # Held-out test set - never touched during fitting or threshold tuning
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
         )
 
-        # Compensate class imbalance at the objective level
         scale_pos_weight = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
         print(f"[BankruptcyEngine] scale_pos_weight = {scale_pos_weight:.1f}")
 
@@ -105,18 +94,16 @@ class BankruptcyEngine:
             n_jobs=-1,
         )
 
-        # ---- Threshold tuning WITHOUT leakage ----
-        # The validation split is carved out BEFORE any fitting, so the
-        # tuning model never sees it. (Tuning a threshold on data the
-        # model was trained on yields a uselessly optimistic threshold.)
         X_fit, X_val, y_fit, y_val = train_test_split(
             X_train, y_train, test_size=0.25,
             random_state=RANDOM_STATE, stratify=y_train,
         )
         print("[BankruptcyEngine] Fitting tuning model on the fit split...")
+        
         tuning_model = CalibratedClassifierCV(
             clone(base), method="isotonic", cv=3
         )
+        
         tuning_model.fit(X_fit, y_fit)
 
         val_proba = tuning_model.predict_proba(X_val)[:, 1]
@@ -130,26 +117,24 @@ class BankruptcyEngine:
         print(f"[BankruptcyEngine] Tuned threshold = {self.threshold} "
               f"(F2 = {best_fbeta:.3f} on held-out validation)")
 
-        # ---- Final model: isotonic-calibrated XGBoost on the FULL train ----
         print("[BankruptcyEngine] Fitting final calibrated model on full train...")
         self.model = CalibratedClassifierCV(base, method="isotonic", cv=3)
         self.model.fit(X_train, y_train)
 
-        # ---- Honest evaluation on the held-out test set ----
         test_proba = self.model.predict_proba(X_test)[:, 1]
-        test_pred  = (test_proba >= self.threshold).astype(int)
+        test_pred = (test_proba >= self.threshold).astype(int)
 
         self.metrics = {
-            "model":               "XGBoost (isotonic-calibrated)",
-            "n_samples":           int(len(df)),
-            "n_features":          int(len(ALL_FEATURES)),
-            "class_balance":       {"stable": int((y == 0).sum()),
-                                    "at_risk": int((y == 1).sum())},
-            "decision_threshold":  self.threshold,
-            "roc_auc":             round(float(roc_auc_score(y_test, test_proba)), 4),
-            "recall_at_risk":      round(float(recall_score(y_test, test_pred)), 4),
-            "precision_at_risk":   round(float(precision_score(y_test, test_pred)), 4),
-            "f1_at_risk":          round(float(fbeta_score(y_test, test_pred, beta=1)), 4),
+            "model": "XGBoost (isotonic-calibrated)",
+            "n_samples": int(len(df)),
+            "n_features": int(len(ALL_FEATURES)),
+            "class_balance": {"stable": int((y == 0).sum()),
+                              "at_risk": int((y == 1).sum())},
+            "decision_threshold": self.threshold,
+            "roc_auc": round(float(roc_auc_score(y_test, test_proba)), 4),
+            "recall_at_risk": round(float(recall_score(y_test, test_pred)), 4),
+            "precision_at_risk": round(float(precision_score(y_test, test_pred)), 4),
+            "f1_at_risk": round(float(fbeta_score(y_test, test_pred, beta=1)), 4),
             "accuracy_note": (
                 "Raw accuracy is intentionally not the headline metric: "
                 "with a 96.8% majority class, accuracy is misleading."
@@ -159,7 +144,6 @@ class BankruptcyEngine:
                                     target_names=["Stable", "At Risk"]))
         print(f"[BankruptcyEngine] ROC-AUC: {self.metrics['roc_auc']}")
 
-        # ---- Persist model + threshold + metrics ----
         os.makedirs(self.model_dir, exist_ok=True)
         with open(self.model_path, "wb") as f:
             pickle.dump({"model": self.model, "threshold": self.threshold}, f)
@@ -169,17 +153,13 @@ class BankruptcyEngine:
         self._build_explainer()
         print(f"[BankruptcyEngine] Model saved to {self.model_path}")
         return True
-
-    # ------------------------------------------------------------------
-    # Loading
-    # ------------------------------------------------------------------
-
-    def load_model(self) -> bool:
+    
         """Loads model, threshold and metrics; trains if missing."""
+    def load_model(self) -> bool:
         if os.path.exists(self.model_path):
             with open(self.model_path, "rb") as f:
                 bundle = pickle.load(f)
-            self.model     = bundle["model"]
+            self.model = bundle["model"]
             self.threshold = bundle.get("threshold", DEFAULT_RISK_THRESHOLD)
             if os.path.exists(self.metrics_path):
                 with open(self.metrics_path, encoding="utf-8") as f:
@@ -192,74 +172,44 @@ class BankruptcyEngine:
         return self.train_and_save_model()
 
     def _build_explainer(self) -> None:
-        """
-        Builds the SHAP TreeExplainer ONCE and caches it.
-        CalibratedClassifierCV wraps several fitted XGBoost copies; SHAP
-        explains tree models, so we take the first calibrated estimator's
-        underlying booster (attributions are for interpretation, and the
-        calibration step is monotonic - feature directions are preserved).
-        """
         try:
             booster = self.model.calibrated_classifiers_[0].estimator
             self.explainer = shap.TreeExplainer(booster)
-        except Exception as e:                       # pragma: no cover
+        except Exception as e:
             print(f"[BankruptcyEngine] SHAP explainer unavailable: {e}")
             self.explainer = None
 
-    # ------------------------------------------------------------------
-    # Prediction
-    # ------------------------------------------------------------------
-
     def predict(self, company_data: pd.DataFrame) -> dict:
-        """
-        Predicts financial resilience for a single company.
-
-        Returns
-        -------
-        dict:
-            prediction        int    0 = Stable, 1 = At Risk (tuned threshold)
-            stability_score   float  calibrated P(stable), 0-1
-            risk_score        float  calibrated P(at risk), 0-1
-            rating            str    letter grade on the A+/.../D scale
-            threshold         float  decision threshold used
-            top_risk_factors  list   top SHAP features driving the prediction
-        """
         if self.model is None:
             self.load_model()
 
         input_df = company_data.reindex(columns=self.feature_names, fill_value=0)
 
-        risk_score   = float(self.model.predict_proba(input_df)[0][1])
+        risk_score = float(self.model.predict_proba(input_df)[0][1])
         stable_score = 1.0 - risk_score
-        prediction   = int(risk_score >= self.threshold)
-        rating       = stability_to_rating(stable_score * 100)
+        prediction = int(risk_score >= self.threshold)
+        rating = stability_to_rating(stable_score * 100)
 
         return {
-            "prediction":       prediction,
-            "stability_score":  round(stable_score, 4),
-            "risk_score":       round(risk_score, 4),
-            "rating":           rating,
-            "threshold":        self.threshold,
+            "prediction": prediction,
+            "stability_score": round(stable_score, 4),
+            "risk_score": round(risk_score, 4),
+            "rating": rating,
+            "threshold": self.threshold,
             "top_risk_factors": self._explain_prediction(input_df),
         }
 
-    # ------------------------------------------------------------------
-    # SHAP explanation (cached explainer)
-    # ------------------------------------------------------------------
-
     def _explain_prediction(self, input_df: pd.DataFrame, top_n: int = 10) -> list[dict]:
-        """Top features by absolute SHAP impact for this single prediction."""
         if self.explainer is None:
             return []
 
         shap_values = self.explainer.shap_values(input_df)
-        # Binary XGBoost -> 2-D array (n_samples, n_features) for class 1
         row = shap_values[0] if shap_values.ndim == 2 else shap_values[:, :, 1][0]
 
         factors = [
             {
-                "feature":     feat,
-                "value":       round(float(val), 6),
+                "feature": feat,
+                "value": round(float(val), 6),
                 "shap_impact": round(float(sv), 6),
             }
             for feat, sv, val in zip(self.feature_names, row, input_df.values[0])
@@ -267,22 +217,13 @@ class BankruptcyEngine:
         factors.sort(key=lambda x: abs(x["shap_impact"]), reverse=True)
         return factors[:top_n]
 
-    # ------------------------------------------------------------------
-    # Validation helper
-    # ------------------------------------------------------------------
-
     def validate_input(self, company_data: dict) -> tuple[bool, list[str]]:
-        """Checks all critical features are present and non-null."""
         missing = [
             f for f in CRITICAL_FEATURES
             if f not in company_data or company_data[f] is None
         ]
         return (len(missing) == 0, missing)
 
-
-# ----------------------------------------------------------------------
-# Quick self-test
-# ----------------------------------------------------------------------
 
 if __name__ == "__main__":
     engine = BankruptcyEngine()

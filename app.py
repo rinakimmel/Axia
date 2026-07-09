@@ -34,9 +34,6 @@ from src.config            import NEWS_WINDOW_DAYS, RATING_DICTIONARY
 
 LOGO_PATH = os.path.join("images", "logo.png")
 
-# ------------------------------------------------------------------
-# Page config
-# ------------------------------------------------------------------
 
 st.set_page_config(
     page_title="Axia - Financial Resilience AI",
@@ -44,10 +41,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# ------------------------------------------------------------------
-# Custom CSS
-# ------------------------------------------------------------------
 
 st.markdown("""
 <style>
@@ -120,9 +113,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------------------------------------------------------
-# Engine loader (cached - runs once per session)
-# ------------------------------------------------------------------
 
 @st.cache_resource(show_spinner="Loading AI engines...")
 def load_engines():
@@ -137,9 +127,6 @@ def load_engines():
         "report":     ReportGenerator(),
     }
 
-# ------------------------------------------------------------------
-# Excel parsing with tolerant name matching
-# ------------------------------------------------------------------
 
 def _normalize(name: str) -> str:
     """
@@ -164,7 +151,6 @@ def parse_excel(uploaded_file) -> dict:
     """
     df = pd.read_excel(uploaded_file)
 
-    # Tall layout detection: first column holds feature names
     if df.shape[0] >= 1 and df.shape[1] >= 2:
         first_col_norm = [_normalize(v) for v in df.iloc[:, 0]]
         matches = sum(1 for v in first_col_norm if v in _NORMALIZED_FEATURES)
@@ -176,7 +162,6 @@ def parse_excel(uploaded_file) -> dict:
                     data[key] = float(value)
             return data
 
-    # Wide layout: headers are feature names
     data = {}
     for col in df.columns:
         key = _NORMALIZED_FEATURES.get(_normalize(col))
@@ -184,15 +169,10 @@ def parse_excel(uploaded_file) -> dict:
             data[key] = float(df[col].iloc[0])
     return data
 
-# ------------------------------------------------------------------
-# Main app
-# ------------------------------------------------------------------
-
 def run_app(engines: dict = None):
     if engines is None:
         engines = load_engines()
 
-    # -- Centered rounded logo --------------------------------------------
     if os.path.exists(LOGO_PATH):
         with open(LOGO_PATH, "rb") as f:
             logo_b64 = base64.b64encode(f.read()).decode()
@@ -209,7 +189,6 @@ def run_app(engines: dict = None):
         </div>
         """, unsafe_allow_html=True)
 
-    # -- Sidebar (right side): analysis settings ---------------------------
     with st.sidebar:
         st.markdown("### Analysis Settings")
 
@@ -238,7 +217,6 @@ def run_app(engines: dict = None):
         </div>
         """, unsafe_allow_html=True)
 
-    # -- Rating scale dictionary -------------------------------------------
     with st.expander("Rating scale dictionary (A+ ... D)"):
         legend_df = pd.DataFrame(
             [(g, i["range"], i["meaning"]) for g, i in RATING_DICTIONARY.items()],
@@ -246,7 +224,6 @@ def run_app(engines: dict = None):
         )
         st.dataframe(legend_df, use_container_width=True, hide_index=True)
 
-    # -- Excel upload -------------------------------------------------------
     st.markdown("#### Upload Financial Data (Excel)")
     st.markdown(f"""
     <div class="note">
@@ -281,7 +258,6 @@ def run_app(engines: dict = None):
         except Exception as e:
             st.error(f"Error reading file: {e}")
 
-    # -- Sentiment source (below the Excel upload) ---------------------------
     st.markdown("#### Sentiment Source")
     sentiment_source = st.radio(
         "How should market sentiment be collected?",
@@ -306,7 +282,6 @@ def run_app(engines: dict = None):
         if opinions_file:
             st.success("Opinions file loaded.")
 
-    # -- Run button ----------------------------------------------------------
     st.divider()
     run_col, _ = st.columns([1, 2])
     with run_col:
@@ -341,7 +316,6 @@ def run_app(engines: dict = None):
         # 1. Financial prediction (calibrated) + rating
         prediction = engines["bankruptcy"].predict(input_df)
 
-        # 2. Sentiment inputs: API headlines or uploaded opinions
         sentiment_results, ages, news_window = [], None, None
         source_key = "none"
 
@@ -375,7 +349,6 @@ def run_app(engines: dict = None):
                          "published": "-", **s}
                     )
 
-        # 3. Aggregate recency-weighted sentiment score
         sentiment_agg = SentimentEngine.aggregate_score(sentiment_results, ages)
 
         # 4. Generate report
@@ -396,7 +369,6 @@ def run_app(engines: dict = None):
             output_path       = report_path,
         )
 
-    # -- Results summary ---------------------------------------------------
     st.success("Analysis complete!")
 
     rating       = prediction["rating"]
@@ -420,7 +392,6 @@ def run_app(engines: dict = None):
                 if sentiment_agg["n_items"] else "N/A")
     col4.metric("Texts analyzed",         sentiment_agg["n_items"])
 
-    # -- SHAP top factors ----------------------------------------------------
     st.markdown("#### Key Risk Drivers (SHAP)")
     factors_df = pd.DataFrame(prediction["top_risk_factors"])
     if not factors_df.empty:
@@ -437,7 +408,6 @@ def run_app(engines: dict = None):
             use_container_width=True, hide_index=True,
         )
 
-    # -- Sentiment summary -----------------------------------------------------
     if sentiment_results:
         window_note = ""
         if news_window:
@@ -456,7 +426,6 @@ def run_app(engines: dict = None):
         st.info(f"No opinions or fresh headlines (last {NEWS_WINDOW_DAYS} days) "
                 "found - the sentiment section is skipped in the report.")
 
-    # -- Download + preview -------------------------------------------------------
     st.divider()
     with open(report_path, "r", encoding="utf-8") as f:
         report_html = f.read()
@@ -473,10 +442,6 @@ def run_app(engines: dict = None):
 
     os.unlink(report_path)
 
-
-# ------------------------------------------------------------------
-# Direct launch
-# ------------------------------------------------------------------
 
 if __name__ == "__main__":
     run_app()

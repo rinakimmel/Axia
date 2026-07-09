@@ -39,9 +39,6 @@ SENTIMENT_COLORS = {
 
 class ReportGenerator:
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def generate(
         self,
@@ -78,9 +75,6 @@ class ReportGenerator:
             f.write(html)
         return output_path
 
-    # ------------------------------------------------------------------
-    # Chart builders
-    # ------------------------------------------------------------------
 
     def _build_gauge(self, stability: float, rating: str) -> str:
         """Half-donut gauge of the calibrated stability probability."""
@@ -183,9 +177,6 @@ class ReportGenerator:
         plt.tight_layout(pad=0.3)
         return self._fig_to_base64(fig)
 
-    # ------------------------------------------------------------------
-    # HTML fragment builders
-    # ------------------------------------------------------------------
 
     def _rating_legend_rows(self, active_rating: str) -> str:
         rows = []
@@ -283,9 +274,6 @@ class ReportGenerator:
             "</table></div></div></section>"
         )
 
-    # ------------------------------------------------------------------
-    # Main HTML renderer
-    # ------------------------------------------------------------------
 
     def _render_html(
         self, company_name, pred, sentiment_results, sentiment_agg,
@@ -468,9 +456,6 @@ class ReportGenerator:
 </body>
 </html>"""
 
-    # ------------------------------------------------------------------
-    # Utility
-    # ------------------------------------------------------------------
 
     def _fig_to_base64(self, fig) -> str:
         buf = io.BytesIO()

@@ -11,46 +11,22 @@ around the codebase:
     dictionary, driven by the CALIBRATED stability probability.
 """
 
-# ----------------------------------------------------------------------
-# News settings
-# ----------------------------------------------------------------------
-
-# Only headlines published within the last N days are used.
 NEWS_WINDOW_DAYS = 3
 
-# Exponential-decay half-life (in days) for recency weighting.
-# A headline this old counts half as much as one published right now.
 RECENCY_HALF_LIFE_DAYS = 1.5
 
-# Maximum number of headlines collected per company.
 MAX_HEADLINES = 12
 
-# ----------------------------------------------------------------------
-# Model settings
-# ----------------------------------------------------------------------
-
 RANDOM_STATE = 42
+
 TEST_SIZE = 0.2
 
-# The decision threshold is tuned automatically during training
-# (maximizing F-beta with beta=2, i.e. recall-oriented) and stored in
-# models/model_metrics.json. This value is only the fallback default.
 DEFAULT_RISK_THRESHOLD = 0.20
 
-# ----------------------------------------------------------------------
-# Branding / credits (shown in the report footer)
-# ----------------------------------------------------------------------
-
-# Put the project authors here - shown as "Developed by ..." in the footer.
 AUTHORS = "The Axia Team"
+
 COPYRIGHT_HOLDER = "Axia"
 
-# ----------------------------------------------------------------------
-# Credit-style rating scale
-# ----------------------------------------------------------------------
-# Each entry: (min_stability_pct_inclusive, grade)
-# Stability = calibrated probability that the company is financially
-# stable, expressed 0-100. Evaluated top-down; first match wins.
 
 RATING_SCALE = [
     (95, "A+"),
@@ -63,7 +39,6 @@ RATING_SCALE = [
     (0,  "D"),
 ]
 
-# Human-readable dictionary shown in the UI and in the report legend.
 RATING_DICTIONARY = {
     "A+": {
         "range":   "95-100%",

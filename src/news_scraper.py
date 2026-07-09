@@ -54,9 +54,6 @@ class NewsScraper:
         self.max_headlines = max_headlines
         self.window_days   = window_days
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def fetch_headlines(self, company_name: str, symbol: str = "") -> dict:
         """
@@ -84,7 +81,6 @@ class NewsScraper:
                 self._fetch_feed(feed["source"], feed["url"], keywords, cutoff, now)
             )
 
-        # Deduplicate by headline text, newest first, cap at max
         seen, unique = set(), []
         collected.sort(key=lambda x: x["age_days"])
         for item in collected:
@@ -100,10 +96,6 @@ class NewsScraper:
             "window_start": cutoff.strftime("%Y-%m-%d"),
             "window_end":   now.strftime("%Y-%m-%d"),
         }
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def _build_keywords(self, company_name: str, symbol: str) -> list[str]:
         keywords = [company_name.lower().strip()]
@@ -133,10 +125,6 @@ class NewsScraper:
 
             published_dt = self._parse_date(pub_date)
 
-            # Freshness filter: skip anything outside the window.
-            # Items with an unparseable date are skipped too - we cannot
-            # guarantee they are fresh, and the product promise is
-            # "data from the last N days".
             if published_dt is None or published_dt < cutoff:
                 continue
 
@@ -170,9 +158,6 @@ class NewsScraper:
             return None
 
 
-# ----------------------------------------------------------------------
-# Quick self-test
-# ----------------------------------------------------------------------
 
 if __name__ == "__main__":
     scraper = NewsScraper()

@@ -7,11 +7,9 @@ to clean, standardized English feature names used throughout the system.
 Also defines which features are CRITICAL (required) vs OPTIONAL for prediction.
 """
 
-# Maps original column name → clean English name
 COLUMN_MAPPING = {
     "Flag":                                                                  "bankruptcy_flag",
 
-    # --- Profitability Ratios ---
     "ROA(C)µ|«e®§«e§éÂÂ«e":                                                "roa_before_tax_c",
     "ROA(A)µ|«á®§«e%":                                                      "roa_after_tax_a",
     "ROA(B)µ|«á®§«e§éÂÂ«e":                                                 "roa_after_tax_b",
@@ -25,11 +23,9 @@ COLUMN_MAPPING = {
     "Àç·~¶O¥Î²v":                                                           "operating_expense_rate",
     "¬ã¨sµo®i¶O¥Î²v":                                                       "research_development_expense_rate",
 
-    # --- Cash Flow Ratios ---
     "²{ª÷¬y¶q¤ñ²v":                                                         "cash_flow_rate",
     "¦³®§­t¶Å§Q²v":                                                         "interest_bearing_debt_ratio",
 
-    # --- Tax & Per-Share Metrics ---
     "µ|²v (A)":                                                             "tax_rate_a",
     "¨CªÑ²b­È (B)":                                                         "net_value_per_share_b",
     "¨CªÑ²b­È (A)":                                                         "net_value_per_share_a",
@@ -40,7 +36,6 @@ COLUMN_MAPPING = {
     "¨CªÑÀç·~§Q¯q(¤¸)":                                                     "operating_profit_per_share",
     "¨CªÑµ|«e²b§Q(¤¸)":                                                     "pre_tax_net_profit_per_share",
 
-    # --- Growth Rates ---
     "¤w¹ê²{¾P³f¤ò§Q¦¨ªø²v":                                                "realized_sales_gross_profit_growth",
     "Àç·~§Q¯q¦¨ªø²v":                                                       "operating_profit_growth",
     "µ|«á²b§Q¦¨ªø²v":                                                       "after_tax_net_profit_growth",
@@ -51,12 +46,10 @@ COLUMN_MAPPING = {
     "Á`¸ê²£³ø¹S¦¨ªø²v":                                                     "total_asset_return_growth",
     "²{ª÷¦A§ë¸ê%":                                                          "cash_reinvestment_pct",
 
-    # --- Liquidity Ratios ---
     "¬y°Ê¤ñ²v":                                                             "current_ratio",
     "³t°Ê¤ñ²v":                                                             "quick_ratio",
     "§Q®§¤ä¥X²v":                                                           "interest_expense_ratio",
 
-    # --- Leverage / Debt Ratios ---
     "Á`­t¶Å/Á`²b­È":                                                        "total_debt_to_net_value",
     "­t¶Å¤ñ²v¢H":                                                            "debt_ratio",
     "²b­È /¸ê²£":                                                            "net_value_to_assets",
@@ -67,7 +60,6 @@ COLUMN_MAPPING = {
     "µ|«e¯Â¯q /¹ê¦¬¸ê¥»":                                                   "pre_tax_net_profit_to_paid_in_capital",
     "¦s³f¤ÎÀ³¦¬±b´Ú /²b­È":                                                 "inventory_and_receivables_to_net_value",
 
-    # --- Turnover / Efficiency Ratios ---
     "Á`¸ê²£¶gÂà¦¸¼Æ":                                                       "total_asset_turnover",
     "À³¦¬±b´Ú¶gÂà¦¸":                                                       "accounts_receivable_turnover",
     "¥­§¡¦¬±b¤Ñ¼Æ":                                                         "average_collection_days",
@@ -75,12 +67,10 @@ COLUMN_MAPPING = {
     "©T©w¸ê²£¶gÂà¦¸¼Æ":                                                     "fixed_assets_turnover",
     "²b­È¶gÂà²v (¦¸)":                                                      "net_value_turnover",
 
-    # --- Per-Employee Metrics ---
     "¨C¤HÀç¦¬":                                                             "revenue_per_employee",
     "¨C¤HÀç·~§Q¯q":                                                         "operating_profit_per_employee",
     "¨C¤H°t³Æ²v":                                                           "allocation_rate_per_employee",
 
-    # --- Features Already in English (indices 54-95) ---
     "working capital to total assets":                                       "working_capital_to_total_assets",
     "Quick asset/Total asset":                                               "quick_asset_to_total_asset",
     "current assets/total assets":                                           "current_assets_to_total_assets",
@@ -125,7 +115,6 @@ COLUMN_MAPPING = {
     "equity to liability":                                                   "equity_to_liability",
 }
 
-# Features grouped by category for the UI form
 FEATURE_GROUPS = {
     "Profitability": [
         "roa_before_tax_c", "roa_after_tax_a", "roa_after_tax_b",
@@ -189,7 +178,6 @@ FEATURE_GROUPS = {
     ],
 }
 
-# Critical features: must be provided for a valid prediction
 CRITICAL_FEATURES = [
     "roa_before_tax_c",
     "roa_after_tax_a",
@@ -205,5 +193,4 @@ CRITICAL_FEATURES = [
     "eps_last_four_quarters",
 ]
 
-# All feature names in the order the model expects (excluding target column)
 ALL_FEATURES = [v for k, v in COLUMN_MAPPING.items() if v != "bankruptcy_flag"]
